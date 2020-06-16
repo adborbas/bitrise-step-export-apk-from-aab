@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/adborbas/bitrise-step-export-apk-from-aab/apkexporter"
+	"github.com/adborbas/bitrise-step-export-apk-from-aab/bundletool"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-tools/go-steputils/stepconf"
@@ -21,14 +22,21 @@ func main() {
 	stepconf.Print(config)
 	fmt.Println()
 
-	apkPath, err := apkexporter.GenerateUniversalAPK(config.AABPath, "0.15.0", nil)
+	bundletoolTool, err := bundletool.New("0.15.0")
+	if err != nil {
+		log.Errorf("Failed to initialize bundletool: %s \n", err)
+		os.Exit(1)
+	}
+
+	exporter := apkexporter.New(bundletoolTool)
+	apkPath, err := exporter.ExportUniversalAPK(config.AABPath, nil)
 	if err != nil {
 		log.Errorf("Failed to export apk, error: %s \n", err)
 		os.Exit(1)
 	}
 
 	exportEnvironmentWithEnvman("APKS_PATH", apkPath)
-	log.Debugf("Success apk exported to: %v", apkPath)
+	log.Infof("Success apk exported to: %v", apkPath)
 	os.Exit(0)
 }
 
