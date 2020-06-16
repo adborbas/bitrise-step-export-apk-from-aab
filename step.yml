@@ -26,9 +26,9 @@ toolkit:
 
 
 inputs:
-  - aabPath: Path to the AAB file.
+  - aab_path:
     opts:
-      title: "The path of the AAB"
+      title: "The path of the AAB."
       summary: Summary. No more than 2-3 sentences.
       description: |
         Description of this input.
@@ -36,9 +36,44 @@ inputs:
         Can be Markdown formatted text.
       is_expand: true
       is_required: true
+  - deploy_dir: $BITRISE_DEPLOY_DIR
+    opts:
+      title: "Deploy directory path."
+      description: |
+        Specify the directory where the exported APK file will be deployed.
+      is_expand: true
+      is_required: true
+  - keystore_path:
+    opts:
+      title: Path of the Keystore file.
+      is_expand: true
+  - keystore_password:
+      opts:
+      title: Keystore's password.
+      description: |
+        If you’re specifying a password in plain text, qualify it with `pass:`. 
+        If you’re passing the path to a file that contains the password, qualify it with `file:`.
+      is_expand: true
+  - key_alias:
+    opts:
+      title: Signing key's alias.
+      is_expand: true
+  - key_password:
+    opts:
+      title: Signing key's password.
+      description: |
+        If you’re specifying a password in plain text, qualify it with `pass:`. 
+        If you’re passing the path to a file that contains the password, qualify it with `file:`.
+      is_expand: true
+  - bundletool_version: "0.15.0"
+    opts:
+      title: Version of bundletool to use.
+      summary: |
+        Versions are available here: https://github.com/google/bundletool/releases
+      is_expand: true
 
 outputs:
-  - APKS_PATH:
+  - APK_PATH:
     opts:
       title: "Example Step Output"
       summary: Summary. No more than 2-3 sentences.

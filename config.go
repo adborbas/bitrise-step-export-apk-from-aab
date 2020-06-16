@@ -2,5 +2,10 @@ package main
 
 // Config is ...
 type Config struct {
-	AABPath string `env:"aabPath,required"`
+	DeployDir        string `env:"deploy_dir,required"`
+	AABPath          string `env:"aab_path,required"`
+	KeystorePath     string `env:"keystore_path"`
+	KeystotePassword string `env:"keystore_password"`
+	KeyAlias         string `env:"key_alias"`
+	KeyPassword      string `env:"key_password"`
 }

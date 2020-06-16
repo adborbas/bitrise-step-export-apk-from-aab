@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/adborbas/bitrise-step-export-apk-from-aab/apkexporter"
@@ -16,7 +15,7 @@ import (
 func main() {
 	var config Config
 	if err := stepconf.Parse(&config); err != nil {
-		fmt.Printf("Error: %s\n", err)
+		log.Errorf("Error: %s \n", err)
 		os.Exit(1)
 	}
 	stepconf.Print(config)
@@ -29,24 +28,35 @@ func main() {
 	}
 
 	exporter := apkexporter.New(bundletoolTool)
-	apkPath, err := exporter.ExportUniversalAPK(config.AABPath, nil)
+	keystoreCfg := parseKeystoreConfig(config)
+	apkPath, err := exporter.ExportUniversalAPK(config.AABPath, keystoreCfg)
 	if err != nil {
 		log.Errorf("Failed to export apk, error: %s \n", err)
 		os.Exit(1)
 	}
 
-	exportEnvironmentWithEnvman("APKS_PATH", apkPath)
+	exportEnvironmentWithEnvman("APK_PATH", apkPath)
 	log.Infof("Success apk exported to: %v", apkPath)
 	os.Exit(0)
+}
+
+func parseKeystoreConfig(config Config) *bundletool.KeystoreConfig {
+	if config.KeystorePath == "" ||
+		config.KeystotePassword == "" ||
+		config.KeyAlias == "" ||
+		config.KeyPassword == "" {
+		return nil
+	}
+
+	return &bundletool.KeystoreConfig{
+		Path:               config.KeystorePath,
+		KeystorePassword:   config.KeystotePassword,
+		SigningKeyAlias:    config.KeyAlias,
+		SigningKeyPassword: config.KeyPassword}
 }
 
 func exportEnvironmentWithEnvman(keyStr, valueStr string) error {
 	cmd := command.New("envman", "add", "--key", keyStr)
 	cmd.SetStdin(strings.NewReader(valueStr))
 	return cmd.Run()
-}
-
-func apkFileName(aabPath string) string {
-	fileNameWithoutExtension := strings.TrimSuffix(aabPath, filepath.Ext(aabPath))
-	return fileNameWithoutExtension + ".apks"
 }
