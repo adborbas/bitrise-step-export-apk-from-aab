@@ -34,7 +34,6 @@ workflows:
           file if you would not specify another value.
         run_if: true
         inputs:
-          - deploy_dir: "/Users/adam.borbas/work/export-apk-from-aab/apks"
           - aab_path: "/Users/adam.borbas/work/export-apk-from-aab/app.aab"
           - keystore_path: "/Users/adam.borbas/work/export-apk-from-aab/debug.keystore"
           - keystore_password: "pass:android"

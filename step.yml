@@ -36,13 +36,6 @@ inputs:
         Can be Markdown formatted text.
       is_expand: true
       is_required: true
-  - deploy_dir: $BITRISE_DEPLOY_DIR
-    opts:
-      title: "Deploy directory path."
-      description: |
-        Specify the directory where the exported APK file will be deployed.
-      is_expand: true
-      is_required: true
   - keystore_path:
     opts:
       title: Path of the Keystore file.

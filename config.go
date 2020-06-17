@@ -2,7 +2,7 @@ package main
 
 // Config is ...
 type Config struct {
-	DeployDir        string `env:"deploy_dir,required"`
+	DeployDir        string `env:"BITRISE_DEPLOY_DIR"`
 	AABPath          string `env:"aab_path,required"`
 	KeystorePath     string `env:"keystore_path"`
 	KeystotePassword string `env:"keystore_password"`

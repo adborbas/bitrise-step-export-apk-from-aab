@@ -72,17 +72,11 @@ func (tool Tool) BuildCommand(cmd string, args ...string) *command.Model {
 }
 
 // BuildAPKs generates universal apks from an aab file.
-func (tool Tool) BuildAPKs(aabPath string, keystoreCfg *KeystoreConfig) (string, error) {
-	tmpPth, err := pathutil.NormalizedOSTempDirPath("aab-bundle")
-	if err != nil {
-		return "", err
-	}
-
-	pth := filepath.Join(tmpPth, "universal.apks")
+func (tool Tool) BuildAPKs(aabPath, apksPath string, keystoreCfg *KeystoreConfig) error {
 	args := []string{}
 	args = append(args, "--mode=universal")
 	args = append(args, "--bundle", aabPath)
-	args = append(args, "--output", pth)
+	args = append(args, "--output", apksPath)
 
 	if keystoreCfg != nil {
 		args = append(args, "--ks", keystoreCfg.Path)
@@ -92,7 +86,7 @@ func (tool Tool) BuildAPKs(aabPath string, keystoreCfg *KeystoreConfig) (string,
 	}
 
 	buildAPKsCommand := tool.BuildCommand("build-apks", args...)
-	return pth, run(buildAPKsCommand)
+	return run(buildAPKsCommand)
 }
 
 func getFromMultipleSources(sources []string) (*http.Response, error) {

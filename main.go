@@ -29,7 +29,7 @@ func main() {
 
 	exporter := apkexporter.New(bundletoolTool)
 	keystoreCfg := parseKeystoreConfig(config)
-	apkPath, err := exporter.ExportUniversalAPK(config.AABPath, keystoreCfg)
+	apkPath, err := exporter.ExportUniversalAPK(config.AABPath, config.DeployDir, keystoreCfg)
 	if err != nil {
 		log.Errorf("Failed to export apk, error: %s \n", err)
 		os.Exit(1)
