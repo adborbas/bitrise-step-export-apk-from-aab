@@ -1,33 +1,43 @@
 package bundletool
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/bitrise-io/go-utils/command"
-	"github.com/bitrise-io/go-utils/errorutil"
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 )
 
-// KeystoreConfig ...
+// KeystoreConfig represents the parameters required to sign an APK.
 type KeystoreConfig struct {
-	Path               string
-	KeystorePassword   string
-	SigningKeyAlias    string
+	// Specifies the path to the deployment keystore used to sign the APKs.
+	Path string
+	// If you’re specifying a password in plain text, qualify it with pass:.
+	// If you’re passing the path to a file that contains the password, qualify it with file:.
+	KeystorePassword string
+	// Specifies the alias of the signing key you want to use.
+	SigningKeyAlias string
+	// If you’re specifying a password in plain text, qualify it with pass:.
+	// If you’re passing the path to a file that contains the password, qualify it with file:.
 	SigningKeyPassword string
 }
 
-// Tool ...
+const (
+	githubReleaseBaseURL = "https://github.com/google/bundletool/releases/download"
+	bundletoolAllJarName = "bundletool-all.jar"
+)
+
+// Tool represent a wrapper around the bundletool.
 type Tool struct {
 	path string
 }
 
-// New ...
+// New downloads the bundletool executable from Github and places it to a temporary path.
 func New(version string) (*Tool, error) {
 	tmpPth, err := pathutil.NormalizedOSTempDirPath("tool")
 	if err != nil {
@@ -35,8 +45,8 @@ func New(version string) (*Tool, error) {
 	}
 
 	resp, err := getFromMultipleSources([]string{
-		"https://github.com/google/bundletool/releases/download/" + version + "/bundletool-all-" + version + ".jar",
-		"https://github.com/google/bundletool/releases/download/" + version + "/bundletool-all.jar",
+		path.Join(githubReleaseBaseURL, version, "bundletool-all-"+version+".jar"),
+		path.Join(githubReleaseBaseURL, version, bundletoolAllJarName),
 	})
 	if err != nil {
 		return nil, err
@@ -48,7 +58,7 @@ func New(version string) (*Tool, error) {
 		}
 	}()
 
-	toolPath := filepath.Join(tmpPth, "bundletool-all.jar")
+	toolPath := filepath.Join(tmpPth, bundletoolAllJarName)
 
 	f, err := os.Create(toolPath)
 	if err != nil {
@@ -63,16 +73,19 @@ func New(version string) (*Tool, error) {
 
 	_, err = io.Copy(f, resp.Body)
 	log.Infof("bundletool path created at: %s", toolPath)
-	return &Tool{path: toolPath}, err
+	return &Tool{toolPath}, err
 }
 
-// BuildCommand ...
+// BuildCommand returns a command.Model with the provided command and arguments that will be
+// executed by bundletool.
 func (tool Tool) BuildCommand(cmd string, args ...string) *command.Model {
 	return command.New("java", append([]string{"-jar", string(tool.path), cmd}, args...)...)
 }
 
-// BuildAPKs generates universal apks from an aab file.
-func (tool Tool) BuildAPKs(aabPath, apksPath string, keystoreCfg *KeystoreConfig) error {
+// BuildAPKs generates an universal .apks file from the provided .aab file.
+// KeystoreConfig is optinal to provide. If provided that the returned .apks will be signed with it.
+// If not provided
+func (tool Tool) BuildAPKs(aabPath, apksPath string, keystoreCfg *KeystoreConfig) *command.Model {
 	args := []string{}
 	args = append(args, "--mode=universal")
 	args = append(args, "--bundle", aabPath)
@@ -85,8 +98,7 @@ func (tool Tool) BuildAPKs(aabPath, apksPath string, keystoreCfg *KeystoreConfig
 		args = append(args, "--key-pass", keystoreCfg.SigningKeyPassword)
 	}
 
-	buildAPKsCommand := tool.BuildCommand("build-apks", args...)
-	return run(buildAPKsCommand)
+	return tool.BuildCommand("build-apks", args...)
 }
 
 func getFromMultipleSources(sources []string) (*http.Response, error) {
@@ -101,26 +113,4 @@ func getFromMultipleSources(sources []string) (*http.Response, error) {
 		}
 	}
 	return nil, fmt.Errorf("none of the sources returned 200 OK status")
-}
-
-// handleError creates error with layout: `<cmd> failed (status: <status_code>): <cmd output>`.
-func handleError(cmd, out string, err error) error {
-	if err == nil {
-		return nil
-	}
-
-	msg := fmt.Sprintf("%s failed", cmd)
-	if status, exitCodeErr := errorutil.CmdExitCodeFromError(err); exitCodeErr == nil {
-		msg += fmt.Sprintf(" (status: %d)", status)
-	}
-	if len(out) > 0 {
-		msg += fmt.Sprintf(": %s", out)
-	}
-	return errors.New(msg)
-}
-
-// run executes a given command.
-func run(cmd *command.Model) error {
-	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
-	return handleError(cmd.PrintableCommandArgs(), out, err)
 }
